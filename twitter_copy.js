@@ -1,8 +1,8 @@
 javascript:(function(){
-  const version = "2.11";
+  const version = "3.0";
   const setting = {
-    "trim_blank_line":10,
-    "avoid_ng_level":1,
+    "trim_blank_line":18,
+    "avoid_ng_level":3,
     "removeEmoji":false,
     "ngurl" : [
       /(https?:\/\/note\.mu\/?[^\s]*)/g,
@@ -247,8 +247,27 @@ javascript:(function(){
   };
   class Tweet {
     constructor(feed,tweetid,twitter,isChild){
-      let tweet = feed.globalObjects.tweets[tweetid];
-      let user = feed.globalObjects.users[tweet.user_id_str];
+      let getTweetEntry = (entries, tweetid)=>{
+        let foundEntry = entries.filter((entry)=>{
+          if (entry.entryId.indexOf(tweetid)>=0) {
+            return entry;
+          }
+        });
+        return foundEntry.length>0 ? foundEntry[0] : undefined;
+      };
+      let tweet, user, card, longText;
+      let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions[0].entries, tweetid);
+      if (isChild) {
+        tweet = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.legacy;
+        user = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.core.user_results.result.legacy;
+        card = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.card ? tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.card.legacy : undefined;
+        longText = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.note_tweet ? tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.note_tweet.note_tweet_results.result.text : undefined;
+      } else {
+        tweet = tweetEntry.content.itemContent.tweet_results.result.legacy;
+        user = tweetEntry.content.itemContent.tweet_results.result.core.user_results.result.legacy;
+        card = tweetEntry.content.itemContent.tweet_results.result.card ? tweetEntry.content.itemContent.tweet_results.result.card.legacy : undefined;
+        longText = tweetEntry.content.itemContent.tweet_results.result.note_tweet ? tweetEntry.content.itemContent.tweet_results.result.note_tweet.note_tweet_results.result.text : undefined;
+      }
       this.feed = feed;
       this.tweetid = tweetid;
       this.twitter = twitter;
@@ -256,49 +275,62 @@ javascript:(function(){
       this.user = user;
       this.username = this.removeEmoji(user.name);
       this.screen_name = user.screen_name;
-      this.created_at = new Date(tweet.created_at);
+      this.created_at = new Date(tweet.created_at); 
       this.isChild = isChild;
-      this.body = this.removeEmoji((tweet.full_text && tweet.full_text.substring(...Tweet.gettextrange(tweet.full_text,tweet.display_text_range[0],tweet.display_text_range[1]))) || "");
-      if (tweet.card) {
-        if (tweet.card.binding_values.title) {
-          let title = this.removeEmoji(tweet.card.binding_values.title.string_value);
+      let text_body = this.removeEmoji(longText ? longText : (tweet.full_text && tweet.full_text.substring(...Tweet.gettextrange(tweet.full_text,tweet.display_text_range[0],tweet.display_text_range[1]))) || "")
+      this.body = text_body;
+      if (card) {
+        let getCardData = (valueName)=>{
+          let foundData = card.binding_values.filter(obj=>{if (obj.key===valueName){return obj;}});
+          if (foundData.length > 0) {
+            return foundData[0].value;
+          } else {
+            return undefined;
+          }
+        };
+        let titleData = getCardData("title");
+        if (titleData) {
+          let title = this.removeEmoji(titleData.string_value);
           let titlepart = title.split(/( ?- ?)|( ?｜ ?)|( ?\| ?)|( ?: ?)|( ?│ ?)/);
  
           if (!(this.body.indexOf(title)>=0 || (titlepart.length>=2 && this.body.indexOf(titlepart[0])>=0))) {
-            this.body = this.body.replace(tweet.card.binding_values.card_url.string_value,this.removeEmoji(title) + "\n" + tweet.card.binding_values.card_url.string_value);
+            let card_url = getCardData("card_url").string_value;
+            this.body = this.body.replace(card_url,this.removeEmoji(title) + "\n" + card_url);
           }
         }
-        let choice = tweet.card.name.match(/poll(\d)choice_text_only/);
+        let choice = card.name.match(/poll(\d)choice_text_only/);
         if (choice) {
-          this.is_enq_end = tweet.card.binding_values.counts_are_final.boolean_value;
-          this.enq_enddate = new Date(tweet.card.binding_values.end_datetime_utc.string_value);
-          if (tweet.card.binding_values.last_updated_datetime_utc) {
-            this.enq_lastupdate = new Date(tweet.card.binding_values.last_updated_datetime_utc.string_value);
+          this.is_enq_end = getCardData("counts_are_final").boolean_value;
+          this.enq_enddate = new Date(getCardData("end_datetime_utc").string_value);
+          if (getCardData("last_updated_datetime_utc")) {
+            this.enq_lastupdate = new Date(getCardData("last_updated_datetime_utc").string_value);
           }
           this.enq = [];
           let num = choice[1];
           for (let i=1;i<=num;i++) {
             this.enq.push({
-              name : tweet.card.binding_values["choice" + i + "_label"].string_value,
-              amount : parseInt(tweet.card.binding_values["choice" + i + "_count"].string_value)
+              name : card.binding_values["choice" + i + "_label"].string_value,
+              amount : parseInt(card.binding_values["choice" + i + "_count"].string_value)
             });
           }
         }
-        if (tweet.card.binding_values.player_stream_url && /.*\.vmap$/.test(tweet.card.binding_values.player_stream_url.string_value)) {
-          this.twitter.promises.push(this.getURLFromVMAP(tweet.card.binding_values.player_stream_url.string_value));
+        if (getCardData("player_stream_url") && /.*\.vmap$/.test(getCardData("player_stream_url").string_value)) {
+          this.twitter.promises.push(this.getURLFromVMAP(getCardData("player_stream_url").string_value));
+          this.imgs = this.imgs || [];
+          this.imgs.push(getCardData("cover_player_image_large").image_value.url);
         }
-        if (tweet.card.name.indexOf("audiospace")>=0) {
-          this.audioSpaceId = tweet.card.binding_values.id.string_value;
-          this.twitter.promises.push(this.getSpace(twitter,this.audioSpaceId));
-        }
-        if (tweet.card.binding_values.photo_image_full_size_original || tweet.card.binding_values.thumbnail_image_original) {
-          let photo_image_url = tweet.card.binding_values.photo_image_full_size_original || tweet.card.binding_values.thumbnail_image_original;
+        // if (card.name.indexOf("audiospace")>=0) {
+        //   this.audioSpaceId = getCardData("id").string_value;
+        //   this.twitter.promises.push(this.getSpace(twitter,this.audioSpaceId));
+        // }
+        if (getCardData("photo_image_full_size_original") || getCardData("thumbnail_image_original")) {
+          let photo_image_url = getCardData("photo_image_full_size_original") || getCardData("thumbnail_image_original");
           photo_image_url =  photo_image_url.image_value.url.match(/card_img\/(\d+)\/([^?]*).*format=(\w+)/);
           this.imgs = this.img || [];
           this.imgs.push("https://ohayua.cyou/card_img/" + photo_image_url[1] + "/" + photo_image_url[2] + "." + photo_image_url[3]);
         }
-        if (tweet.card.binding_values.unified_card && tweet.card.binding_values.unified_card.string_value) {
-          let ucard = JSON.parse(tweet.card.binding_values.unified_card.string_value);
+        if (getCardData("unified_card") && getCardData("unified_card").string_value) {
+          let ucard = JSON.parse(getCardData("unified_card").string_value);
           if (ucard.destination_objects && ucard.destination_objects.browser_1 && ucard.destination_objects.browser_1.data && ucard.destination_objects.browser_1.data.url_data) {
             this.videourl = this.videourl || [];
             this.videourl.push(this.avoidLinkURLNG(this.avoidVideoURLNG(ucard.destination_objects.browser_1.data.url_data.url)));
@@ -383,7 +415,7 @@ javascript:(function(){
       }
       if (tweet.quoted_status_permalink && !isChild) {
         try {
-          this.child = new Tweet(feed, Twitter.getTweetId(new URL(tweet.quoted_status_permalink.expanded)),twitter,true);
+          this.child = new Tweet(feed, tweetid,twitter,true);
           this.body = this.body.replace(tweet.quoted_status_permalink.expanded,"");
         } catch(e) {
           console.log(e);
@@ -447,7 +479,7 @@ javascript:(function(){
       }
       str += this.getURL();
       if (this.child) {
-        str += "\n[引用元] " + this.child.toString();
+        str += "\n\n[引用元] " + this.child.toString();
       }
       if (str.split("\n").length > parseInt(setting.trim_blank_line)) {
         str = str.replace(/^\s*\n/gm,"");
@@ -792,7 +824,10 @@ javascript:(function(){
       });
     };
     getTweets() {
-      let url = "https://api.twitter.com/2/timeline/conversation/" + this.tweetid + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&count=20&ext=mediaStats%2ChighlightedLabel%2CcameraMoment";
+      let url = "https://twitter.com/i/api/graphql/-Ls3CrSQNo2fRKH6i6Na1A/TweetDetail?variables=" +
+        encodeURIComponent("{\"focalTweetId\":\"") + this.tweetid + encodeURIComponent("\",\"cursor\":\"\",\"referrer\":\"tweet\",\"with_rux_injections\":false,\"includePromotedContent\":true,\"withCommunity\":true,\"withQuickPromoteEligibilityTweetFields\":true,\"withBirdwatchNotes\":true,\"withVoice\":true,\"withV2Timeline\":true}") +
+        "&features=" + encodeURIComponent("{\"rweb_lists_timeline_redesign_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"creator_subscriptions_tweet_preview_api_enabled\":true,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"responsive_web_twitter_article_tweet_consumption_enabled\":false,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":true,\"longform_notetweets_rich_text_read_enabled\":true,\"longform_notetweets_inline_media_enabled\":true,\"responsive_web_media_download_video_enabled\":false,\"responsive_web_enhance_cards_enabled\":false}") + 
+        "&fieldToggles=" + encodeURIComponent("{\"withAuxiliaryUserLabels\":false,\"withArticleRichContentState\":false}");
       let headerparam = {
         "authorization": this.authtoken,
         "x-csrf-token": this.csfrtoken,
