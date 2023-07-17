@@ -309,8 +309,8 @@ javascript:(function(){
           let num = choice[1];
           for (let i=1;i<=num;i++) {
             this.enq.push({
-              name : card.binding_values["choice" + i + "_label"].string_value,
-              amount : parseInt(card.binding_values["choice" + i + "_count"].string_value)
+              name : getCardData("choice" + i + "_label").string_value,
+              amount : parseInt(getCardData("choice" + i + "_count").string_value)
             });
           }
         }
