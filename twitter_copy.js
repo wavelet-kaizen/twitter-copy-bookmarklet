@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.01";
+  const version = "3.02";
   const setting = {
     "trim_blank_line":18,
     "avoid_ng_level":0,
@@ -272,7 +272,7 @@ javascript:(function(){
       }
       tweet = parent.legacy;
       user = parent.core.user_results.result.legacy;
-      card = parent.card ? parent.card : undefined;
+      card = parent.card ? parent.card.legacy : undefined;
       longText = parent.note_tweet ? parent.note_tweet.note_tweet_results.result.text : undefined;
       this.feed = feed;
       this.tweetid = tweetid;
