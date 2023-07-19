@@ -1,8 +1,8 @@
 javascript:(function(){
-  const version = "3.0";
+  const version = "3.01";
   const setting = {
     "trim_blank_line":18,
-    "avoid_ng_level":3,
+    "avoid_ng_level":0,
     "removeEmoji":false,
     "ngurl" : [
       /(https?:\/\/note\.mu\/?[^\s]*)/g,
@@ -255,19 +255,25 @@ javascript:(function(){
         });
         return foundEntry.length>0 ? foundEntry[0] : undefined;
       };
-      let tweet, user, card, longText;
+      let tweet, user, card, longText, parent;
       let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions[0].entries, tweetid);
       if (isChild) {
-        tweet = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.legacy;
-        user = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.core.user_results.result.legacy;
-        card = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.card ? tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.card.legacy : undefined;
-        longText = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.note_tweet ? tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.note_tweet.note_tweet_results.result.text : undefined;
+        if (tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet) {
+          parent = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet; 
+        } else {
+          parent = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result; 
+        }
       } else {
-        tweet = tweetEntry.content.itemContent.tweet_results.result.legacy;
-        user = tweetEntry.content.itemContent.tweet_results.result.core.user_results.result.legacy;
-        card = tweetEntry.content.itemContent.tweet_results.result.card ? tweetEntry.content.itemContent.tweet_results.result.card.legacy : undefined;
-        longText = tweetEntry.content.itemContent.tweet_results.result.note_tweet ? tweetEntry.content.itemContent.tweet_results.result.note_tweet.note_tweet_results.result.text : undefined;
+        if (tweetEntry.content.itemContent.tweet_results.result.tweet) {
+          parent = tweetEntry.content.itemContent.tweet_results.result.tweet;
+        } else {
+          parent = tweetEntry.content.itemContent.tweet_results.result;
+        }
       }
+      tweet = parent.legacy;
+      user = parent.core.user_results.result.legacy;
+      card = parent.card ? parent.card : undefined;
+      longText = parent.note_tweet ? parent.note_tweet.note_tweet_results.result.text : undefined;
       this.feed = feed;
       this.tweetid = tweetid;
       this.twitter = twitter;
