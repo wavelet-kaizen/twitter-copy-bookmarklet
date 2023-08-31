@@ -1,7 +1,7 @@
 javascript:(function(){
-  const version = "3.02";
+  const version = "3.03";
   const setting = {
-    "trim_blank_line":18,
+    "trim_blank_line":128,
     "avoid_ng_level":0,
     "removeEmoji":false,
     "ngurl" : [
@@ -325,10 +325,10 @@ javascript:(function(){
           this.imgs = this.imgs || [];
           this.imgs.push(getCardData("cover_player_image_large").image_value.url);
         }
-        // if (card.name.indexOf("audiospace")>=0) {
-        //   this.audioSpaceId = getCardData("id").string_value;
-        //   this.twitter.promises.push(this.getSpace(twitter,this.audioSpaceId));
-        // }
+        if (card.name.indexOf("audiospace")>=0) {
+          this.audioSpaceId = getCardData("id").string_value;
+          this.twitter.promises.push(this.getSpace(twitter,this.audioSpaceId));
+        }
         if (getCardData("photo_image_full_size_original") || getCardData("thumbnail_image_original")) {
           let photo_image_url = getCardData("photo_image_full_size_original") || getCardData("thumbnail_image_original");
           photo_image_url =  photo_image_url.image_value.url.match(/card_img\/(\d+)\/([^?]*).*format=(\w+)/);
@@ -369,6 +369,11 @@ javascript:(function(){
       }
       if (tweet.entities && tweet.entities.urls) {
         tweet.entities.urls.forEach(url=>{
+          this.body = this.body.replace(url.url,this.avoidLinkURLNG(url.expanded_url));
+        });
+      }
+      if (parent.note_tweet && parent.note_tweet.note_tweet_results.result.entity_set && parent.note_tweet.note_tweet_results.result.entity_set.urls) {
+        parent.note_tweet.note_tweet_results.result.entity_set.urls.forEach(url=>{
           this.body = this.body.replace(url.url,this.avoidLinkURLNG(url.expanded_url));
         });
       }
@@ -508,11 +513,11 @@ javascript:(function(){
       });
     }
     async getSpace(twitter,audioSpaceId) {
-      let url = "https://" + (this.twitter.isMobile ? "mobile." : "") + "api.twitter.com/graphql/" + twitter.audioSpaceQueryId + "/AudioSpaceById?variables=" + 
+      let url = "https://" + (this.twitter.isMobile ? "mobile." : "") + "twitter.com/i/api/graphql/" + twitter.audioSpaceQueryId + "/AudioSpaceById?variables=" + 
         encodeURIComponent("{\"id\":\"" + audioSpaceId + "\"," +
-        "\"isMetatagsQuery\":false,\"withSuperFollowsUserFields\":true,\"withDownvotePerspective\":false,\"withReactionsMetadata\":false,\"withReactionsPerspective\":false,\"withSuperFollowsTweetFields\":true,\"withReplays\":true}") +
-        "&features=" + encodeURIComponent("{\"spaces_2022_h2_clipping\":true,\"spaces_2022_h2_spaces_communities\":true,\"responsive_web_twitter_blue_verified_badge_is_enabled\":true,\"verified_phone_label_enabled\":false,\"longform_notetweets_consumption_enabled\":true,\"tweetypie_unmention_optimization_enabled\":true,\"vibe_api_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":false,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"interactive_text_enabled\":true,\"responsive_web_text_conversations_enabled\":false,\"responsive_web_enhance_cards_enabled\":false}")
-        ;
+        "\"isMetatagsQuery\":false,\"withReplays\":true,\"withListeners\":false}") +
+        "&features=" + encodeURIComponent("{\"spaces_2022_h2_clipping\":true,\"spaces_2022_h2_spaces_communities\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"creator_subscriptions_tweet_preview_api_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"responsive_web_twitter_article_tweet_consumption_enabled\":false,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":true,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"longform_notetweets_rich_text_read_enabled\":true,\"longform_notetweets_inline_media_enabled\":true,\"responsive_web_media_download_video_enabled\":false,\"responsive_web_enhance_cards_enabled\":false}") +
+        "&fieldToggles=" + encodeURIComponent("{\"withAuxiliaryUserLabels\":false,\"withArticleRichContentState\":false}");
       let headerparam = {
         "accept": "*/*",
         "accept-language": "ja",
@@ -685,8 +690,8 @@ javascript:(function(){
       if (url.match(/.*\.mp4/) && setting.avoid_ng_level >= 2) {
         return url.replace(/http/g,"tp");
       }
-      url = url.replace(/https?:\/\/(?:.*?youtu\.be\/|.*?youtube\.com\/watch.*?v=)([A-Za-z\-\_0-9%]+)(?:[\?\&\#][^t][\=\-\w\.]*)*(?:[\?\&\#]t=)([\dhms]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"https://ohayua.cyou/?yt=$1&t=$2 https://i.ytimg.com/vi/$1/hqdefault.jpg");
-      url = url.replace(/https?:\/\/(?:.*?youtu\.be\/|.*?youtube\.com\/watch.*?v=)([A-Za-z\-\_0-9%]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"http://y2u.be/$1 https://i.ytimg.com/vi/$1/hqdefault.jpg");
+      url = url.replace(/https?:\/\/(?:.*?youtu\.be|.*?youtube\.com)(?:\/(?:watch|live|shorts))?\/?(?:watch\?v=)?([A-Za-z\-\_0-9%]+)(?:[\?\&\#][^t][\=\-\w\.]*)*(?:[\?\&\#]t=)([\dhms]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"https://ohayua.cyou/?yt=$1&t=$2 https://i.ytimg.com/vi/$1/hqdefault.jpg");
+      url = url.replace(/https?:\/\/(?:.*?youtu\.be|.*?youtube\.com)(?:\/(?:watch|live|shorts))?\/?(?:watch\?v=)?([A-Za-z\-\_0-9%]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"http://y2u.be/$1 https://i.ytimg.com/vi/$1/hqdefault.jpg");
       return url
     }
     removeEmoji(text) {
@@ -822,7 +827,7 @@ javascript:(function(){
         return response.text();
       });
       Promise.all([m,v,a]).then(([m,v,a])=>{
-        this.authtoken = "Bearer " + m.match(/"AAAAAA[^"]+"/)[0].replace(/"/g,"");
+        this.authtoken = "Bearer " + m.match(/[" ]AAAAAA[^"]+"/)[0].replace(/[" ]/g,"");
         this.audioSpaceQueryId = a.match("queryId:\s*\"([^\"]+)\",(?=operationName:\s*\"AudioSpaceById\")")[1];
         let emoji = v.match(/\/(\(\?:\\ud83d[^\/]+)\/g/);
         this.emojiRegExp = new RegExp(emoji?emoji[1]:"","g");
