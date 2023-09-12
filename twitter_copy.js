@@ -599,6 +599,9 @@ javascript:(function(){
       return d.getFullYear() + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + ("0" + (d.getDate())).slice(-2) + " " + ("0" + (d.getHours())).slice(-2) + ":" + ("0" + (d.getMinutes())).slice(-2) + ":" + ("0" + (d.getSeconds())).slice(-2);
     }
     replaceNGWord(text) {
+      if (setting.avoid_ng_level === 0) {
+        return text;
+      }
       setting.ngword.forEach(ng=>{
         let url_pattern = /(https?:\/\/[^\s]*)/;
         text = text.split(url_pattern).map((x)=>{
@@ -654,8 +657,11 @@ javascript:(function(){
       return url.toString();
     };
     avoidLinkURLNG(str) {
-      str = this.replaceText(str,setting.replaceURLString);
       str = this.removeNGQueryParam(str);
+      if (setting.avoid_ng_level === 0) {
+        return str;
+      }
+      str = this.replaceText(str,setting.replaceURLString);
       if (str.match(/https?:\/\/(?:.*?youtu\.be\/|.*?youtube\.com\/)/)) {
         return str;
       }
@@ -674,6 +680,9 @@ javascript:(function(){
       }
     }
     avoidImageURLNG(str) {
+      if (setting.avoid_ng_level === 0) {
+        return str;
+      }
       str = this.replaceText(str,setting.replaceURLString);
       if (setting.avoid_ng_level < 2) {
         return str;
@@ -686,7 +695,9 @@ javascript:(function(){
       }
     }
     avoidVideoURLNG(url) {
-      url = this.replaceText(url,setting.replaceURLString);
+      if (setting.avoid_ng_level > 0) {
+        url = this.replaceText(url,setting.replaceURLString);
+      }
       if (url.match(/.*\.mp4/) && setting.avoid_ng_level >= 2) {
         return url.replace(/http/g,"tp");
       }
