@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.03";
+  const version = "3.04";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
@@ -515,9 +515,8 @@ javascript:(function(){
     async getSpace(twitter,audioSpaceId) {
       let url = "https://" + (this.twitter.isMobile ? "mobile." : "") + "twitter.com/i/api/graphql/" + twitter.audioSpaceQueryId + "/AudioSpaceById?variables=" + 
         encodeURIComponent("{\"id\":\"" + audioSpaceId + "\"," +
-        "\"isMetatagsQuery\":false,\"withReplays\":true,\"withListeners\":false}") +
-        "&features=" + encodeURIComponent("{\"spaces_2022_h2_clipping\":true,\"spaces_2022_h2_spaces_communities\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"creator_subscriptions_tweet_preview_api_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"responsive_web_twitter_article_tweet_consumption_enabled\":false,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":true,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"longform_notetweets_rich_text_read_enabled\":true,\"longform_notetweets_inline_media_enabled\":true,\"responsive_web_media_download_video_enabled\":false,\"responsive_web_enhance_cards_enabled\":false}") +
-        "&fieldToggles=" + encodeURIComponent("{\"withAuxiliaryUserLabels\":false,\"withArticleRichContentState\":false}");
+        "\"isMetatagsQuery\":false,\"withReplays\":true,\"withListeners\":true}") +
+        "&features=" + encodeURIComponent("{\"spaces_2022_h2_spaces_communities\":true,\"spaces_2022_h2_clipping\":true,\"creator_subscriptions_tweet_preview_api_enabled\":true,\"responsive_web_home_pinned_timelines_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"c9s_tweet_anatomy_moderator_badge_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"responsive_web_twitter_article_tweet_consumption_enabled\":false,\"tweet_awards_web_tipping_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":true,\"longform_notetweets_rich_text_read_enabled\":true,\"longform_notetweets_inline_media_enabled\":true,\"responsive_web_media_download_video_enabled\":false,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_enhance_cards_enabled\":false}");
       let headerparam = {
         "accept": "*/*",
         "accept-language": "ja",
@@ -546,6 +545,9 @@ javascript:(function(){
         "mode": "cors",
         "credentials": "include"
       }).then(response=>{
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
         return response.json();
       }).then(json=>{
         this.spaceObj = json;
@@ -559,6 +561,9 @@ javascript:(function(){
           updated_at : json.data.audioSpace.metadata.updated_at ? new Date(json.data.audioSpace.metadata.updated_at) : null,
         };
         return json;
+      }).catch(error => {
+        console.log(error);
+        return null;
       });
     }
     getenqRemainTime() {
@@ -789,17 +794,6 @@ javascript:(function(){
       this.twid = Twitter.getToken("twid");
       this.mainurl = Twitter.getScriptURL("/main");
       this.vendorurl = Twitter.getScriptURL("vendor");
-      let scripts = document.getElementsByTagName('script');
-      for (let i = 0; i < scripts.length; i++) {
-        let m = scripts[i].innerHTML.match(/endpoints\.AudioSpaces":\s?\"(\w+)"/);
-        if (m) {
-          let ext_regex = /\+\s*"([^"]+.js)"/;
-          ext_regex.lastIndex = m.index + 1;
-          let ext = scripts[i].innerHTML.match(ext_regex);
-          this.audioSpaceEndpoints = "https://abs.twimg.com/responsive-web/client-web/endpoints.AudioSpaces." + m[1] + ext[1];
-          break;
-        }
-      }
       if (this.mainiurl === "" || this.vendorurl === "") {
         this.oldstyle = true;
         this.mainurl = Twitter.getScriptURL("/init\.ja");
@@ -834,12 +828,12 @@ javascript:(function(){
       let v = fetch(this.vendorurl,{mode:"cors"}).then(response=>{
         return response.text();
       });
-      let a = fetch(this.audioSpaceEndpoints, {"mode": "cors"}).then(response=>{
-        return response.text();
-      });
-      Promise.all([m,v,a]).then(([m,v,a])=>{
+      Promise.all([m,v]).then(([m,v])=>{
         this.authtoken = "Bearer " + m.match(/[" ]AAAAAA[^"]+"/)[0].replace(/[" ]/g,"");
-        this.audioSpaceQueryId = a.match("queryId:\s*\"([^\"]+)\",(?=operationName:\s*\"AudioSpaceById\")")[1];
+        let audioSpaceQueryId = m.match("queryId:\s*\"([^\"]+)\",(?=operationName:\s*\"AudioSpaceById\")");
+        if (audioSpaceQueryId) {
+          this.audioSpaceQueryId = audioSpaceQueryId[1];
+        }
         let emoji = v.match(/\/(\(\?:\\ud83d[^\/]+)\/g/);
         this.emojiRegExp = new RegExp(emoji?emoji[1]:"","g");
         return this.getTweets();
