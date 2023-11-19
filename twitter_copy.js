@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.04";
+  const version = "3.05";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
@@ -275,7 +275,7 @@ javascript:(function(){
       card = parent.card ? parent.card.legacy : undefined;
       longText = parent.note_tweet ? parent.note_tweet.note_tweet_results.result.text : undefined;
       this.feed = feed;
-      this.tweetid = tweetid;
+      this.tweetid = tweet.id_str;
       this.twitter = twitter;
       this.tweet = tweet;
       this.user = user;
@@ -705,6 +705,9 @@ javascript:(function(){
       }
       if (url.match(/.*\.mp4/) && setting.avoid_ng_level >= 2) {
         return url.replace(/http/g,"tp");
+      }
+      if (url.match(/\/channel\//)) {
+        return url;
       }
       url = url.replace(/https?:\/\/(?:.*?youtu\.be|.*?youtube\.com)(?:\/(?:watch|live|shorts))?\/?(?:watch\?v=)?([A-Za-z\-\_0-9%]+)(?:[\?\&\#][^t][\=\-\w\.]*)*(?:[\?\&\#]t=)([\dhms]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"https://ohayua.cyou/?yt=$1&t=$2 https://i.ytimg.com/vi/$1/hqdefault.jpg");
       url = url.replace(/https?:\/\/(?:.*?youtu\.be|.*?youtube\.com)(?:\/(?:watch|live|shorts))?\/?(?:watch\?v=)?([A-Za-z\-\_0-9%]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"http://y2u.be/$1 https://i.ytimg.com/vi/$1/hqdefault.jpg");
