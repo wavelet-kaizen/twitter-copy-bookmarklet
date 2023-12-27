@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.06";
+  const version = "3.07";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
