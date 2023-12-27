@@ -706,7 +706,7 @@ javascript:(function(){
       if (url.match(/.*\.mp4/) && setting.avoid_ng_level >= 2) {
         return url.replace(/http/g,"tp");
       }
-      if (url.match(/\/channel\//)) {
+      if (url.match(/(\/channel\/)|(\/playlist)/)) {
         return url;
       }
       url = url.replace(/https?:\/\/(?:.*?youtu\.be|.*?youtube\.com)(?:\/(?:watch|live|shorts))?\/?(?:watch\?v=)?([A-Za-z\-\_0-9%]+)(?:[\?\&\#][^t][\=\-\w\.]*)*(?:[\?\&\#]t=)([\dhms]+)(?:[\?\&\#][\w\=\-\.]*)*/g,"https://ohayua.cyou/?yt=$1&t=$2 https://i.ytimg.com/vi/$1/hqdefault.jpg");
