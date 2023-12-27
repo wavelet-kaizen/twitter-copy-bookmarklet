@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.05";
+  const version = "3.06";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
@@ -339,7 +339,7 @@ javascript:(function(){
           let ucard = JSON.parse(getCardData("unified_card").string_value);
           if (ucard.destination_objects && ucard.destination_objects.browser_1 && ucard.destination_objects.browser_1.data && ucard.destination_objects.browser_1.data.url_data) {
             this.videourl = this.videourl || [];
-            this.videourl.push(this.avoidLinkURLNG(this.avoidVideoURLNG(ucard.destination_objects.browser_1.data.url_data.url)));
+            this.videourl.push(this.avoidVideoURLNG(this.avoidLinkURLNG(ucard.destination_objects.browser_1.data.url_data.url)));
           }
           if (ucard.media_entities) {
             let media_entities = Object.keys(ucard.media_entities).map(x=>{if (["video","photo"].indexOf(ucard.media_entities[x].type) >=0){return ucard.media_entities[x]}}).filter(x=>{return x});
