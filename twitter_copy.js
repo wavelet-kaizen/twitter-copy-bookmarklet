@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.08";
+  const version = "3.09";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
@@ -256,7 +256,7 @@ javascript:(function(){
         return foundEntry.length>0 ? foundEntry[0] : undefined;
       };
       let tweet, user, card, longText, parent;
-      let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions[0].entries, tweetid);
+      let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions[1].entries, tweetid);
       if (isChild) {
         if (tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet) {
           parent = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet; 
@@ -952,6 +952,7 @@ javascript:(function(){
       document.querySelector("#loading-circle-animation-style").remove();
     }
   };
+  console.log("version:" + version);
   t = new Twitter(true);
   t.startLoading();
   t.getData();
