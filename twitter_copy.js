@@ -1,5 +1,5 @@
 javascript:(function(){
-  const version = "3.09";
+  const version = "3.09a";
   const setting = {
     "trim_blank_line":128,
     "avoid_ng_level":0,
@@ -247,16 +247,17 @@ javascript:(function(){
   };
   class Tweet {
     constructor(feed,tweetid,twitter,isChild){
-      let getTweetEntry = (entries, tweetid)=>{
-        let foundEntry = entries.filter((entry)=>{
-          if (entry.entryId.indexOf(tweetid)>=0) {
-            return entry;
-          }
-        });
-        return foundEntry.length>0 ? foundEntry[0] : undefined;
+      let getTweetEntry = (instructions, tweetid) => {
+        const targetInstruction = instructions.find(
+          (instruction) =>
+            instruction.type === "TimelineAddEntries" && instruction.entries
+        );
+        return targetInstruction?.entries.find((entry) =>
+          entry.entryId.includes(tweetid)
+        );
       };
       let tweet, user, card, longText, parent;
-      let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions[1].entries, tweetid);
+      let tweetEntry = getTweetEntry(feed.data.threaded_conversation_with_injections_v2.instructions, tweetid);
       if (isChild) {
         if (tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet) {
           parent = tweetEntry.content.itemContent.tweet_results.result.quoted_status_result.result.tweet; 
@@ -827,12 +828,29 @@ javascript:(function(){
     };
     static getModuleParameter(moduleName, key, parameter) {
       try {
-        let modules = window.webpackChunk_twitter_responsive_web.filter(x=>{return (x[0][0] === moduleName);})[0][1];
-        let matchedAudioSpaceId = modules[Object.keys(modules).filter(x=>{return modules[x].toString().match(key)})].toString().match(parameter);
-        console.log(matchedAudioSpaceId);
-        return matchedAudioSpaceId ? matchedAudioSpaceId[1] : "";
+        const candidateModules = window.webpackChunk_twitter_responsive_web.filter(
+          (x) =>
+            Array.isArray(x) &&
+            Array.isArray(x[0]) &&
+            typeof x[0][0] === 'string' &&
+            x[0][0].startsWith(moduleName)
+        );
+        for (const module of candidateModules) {
+          const moduleContent = module[1];
+          const targetKey = Object.keys(moduleContent).find(k =>
+            moduleContent[k] && moduleContent[k].toString().match(key)
+          );
+          if (targetKey) {
+            const matchedData = moduleContent[targetKey].toString().match(parameter);
+            if (matchedData && matchedData[1]) {
+              return matchedData[1];
+            }
+          }
+        }
+        return "";
       } catch (e) {
-        console.log(e);
+        console.error(e);
+        return "";
       }
     };
     getData() {
