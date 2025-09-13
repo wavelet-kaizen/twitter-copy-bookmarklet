@@ -473,6 +473,9 @@ javascript:(function(){
         if (["Ended", "TimedOut"].indexOf(this.space.state) >= 0) {
           end += " " + this.getDate(this.space.updated_at);
         }
+        if (this.space.is_recording) {
+          str += "[録画あり] "
+        }
         str += (this.space.title ? this.removeEmoji(this.space.title) + " " : "") + "[" + setting.spaceState[this.space.state] + start + (end ? end : "") + "]";
         str += "\nホスト：" + (Array.from(new Set(this.space.admins.map(x=>{return this.removeEmoji(x.display_name) + " @" + x.twitter_screen_name})))).join(", ");
         if (this.space.speakers.length > 0) {
@@ -514,10 +517,54 @@ javascript:(function(){
       });
     }
     async getSpace(twitter,audioSpaceId) {
-      let url = "https://" + (this.twitter.isMobile ? "mobile." : "") + this.twitter.domain + "/i/api/graphql/" + twitter.audioSpaceQueryId + "/AudioSpaceById?variables=" + 
-        encodeURIComponent("{\"id\":\"" + audioSpaceId + "\"," +
-        "\"isMetatagsQuery\":false,\"withReplays\":true,\"withListeners\":true}") +
-        "&features=" + encodeURIComponent("{\"spaces_2022_h2_spaces_communities\":true,\"spaces_2022_h2_clipping\":true,\"creator_subscriptions_tweet_preview_api_enabled\":true,\"rweb_tipjar_consumption_enabled\":true,\"responsive_web_graphql_exclude_directive_enabled\":true,\"verified_phone_label_enabled\":false,\"communities_web_enable_tweet_community_results_fetch\":true,\"c9s_tweet_anatomy_moderator_badge_enabled\":true,\"articles_preview_enabled\":true,\"responsive_web_graphql_skip_user_profile_image_extensions_enabled\":false,\"tweetypie_unmention_optimization_enabled\":true,\"responsive_web_edit_tweet_api_enabled\":true,\"graphql_is_translatable_rweb_tweet_is_translatable_enabled\":true,\"view_counts_everywhere_api_enabled\":true,\"longform_notetweets_consumption_enabled\":true,\"responsive_web_twitter_article_tweet_consumption_enabled\":true,\"tweet_awards_web_tipping_enabled\":false,\"creator_subscriptions_quote_tweet_preview_enabled\":false,\"freedom_of_speech_not_reach_fetch_enabled\":true,\"standardized_nudges_misinfo\":true,\"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled\":true,\"tweet_with_visibility_results_prefer_gql_media_interstitial_enabled\":true,\"rweb_video_timestamps_enabled\":true,\"longform_notetweets_rich_text_read_enabled\":true,\"longform_notetweets_inline_media_enabled\":true,\"responsive_web_graphql_timeline_navigation_enabled\":true,\"responsive_web_enhance_cards_enabled\":false}");
+      let url = "https://" + (this.twitter.isMobile ? "mobile." : "") + 
+        this.twitter.domain.replace("twitter.com", "x.com") +
+        "/i/api/graphql/" + twitter.audioSpaceQueryId + "/AudioSpaceById?variables=" + 
+        encodeURIComponent(JSON.stringify({
+          "id": audioSpaceId,
+          "isMetatagsQuery": false,
+          "withReplays": true,
+          "withListeners": true
+        })) +
+        "&features=" + encodeURIComponent(JSON.stringify({
+          "spaces_2022_h2_spaces_communities": true,
+          "spaces_2022_h2_clipping": true,
+          "creator_subscriptions_tweet_preview_api_enabled": true,
+          "payments_enabled": false,
+          "rweb_xchat_enabled": true,
+          "profile_label_improvements_pcf_label_in_post_enabled": true,
+          "rweb_tipjar_consumption_enabled": true,
+          "verified_phone_label_enabled": false,
+          "premium_content_api_read_enabled": false,
+          "communities_web_enable_tweet_community_results_fetch": true,
+          "c9s_tweet_anatomy_moderator_badge_enabled": true,
+          "responsive_web_grok_analyze_button_fetch_trends_enabled": false,
+          "responsive_web_grok_analyze_post_followups_enabled": true,
+          "responsive_web_jetfuel_frame": true,
+          "responsive_web_grok_share_attachment_enabled": true,
+          "articles_preview_enabled": true,
+          "responsive_web_graphql_skip_user_profile_image_extensions_enabled": false,
+          "responsive_web_edit_tweet_api_enabled": true,
+          "graphql_is_translatable_rweb_tweet_is_translatable_enabled": true,
+          "view_counts_everywhere_api_enabled": true,
+          "longform_notetweets_consumption_enabled": true,
+          "responsive_web_twitter_article_tweet_consumption_enabled": true,
+          "tweet_awards_web_tipping_enabled": false,
+          "responsive_web_grok_show_grok_translated_post": false,
+          "responsive_web_grok_analysis_button_from_backend": false,
+          "creator_subscriptions_quote_tweet_preview_enabled": false,
+          "freedom_of_speech_not_reach_fetch_enabled": true,
+          "standardized_nudges_misinfo": true,
+          "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+          "longform_notetweets_rich_text_read_enabled": true,
+          "longform_notetweets_inline_media_enabled": true,
+          "responsive_web_grok_image_annotation_enabled": true,
+          "responsive_web_grok_imagine_annotation_enabled": true,
+          "responsive_web_graphql_timeline_navigation_enabled": true,
+          "responsive_web_grok_community_note_auto_translation_is_enabled": false,
+          "responsive_web_enhance_cards_enabled": false
+        }));
+
       let headerparam = {
         "accept": "*/*",
         "accept-language": "ja",
@@ -560,6 +607,7 @@ javascript:(function(){
           started_at : json.data.audioSpace.metadata.started_at ? new Date(json.data.audioSpace.metadata.started_at) : null,
           scheduled_start : json.data.audioSpace.metadata.scheduled_start ? new Date(json.data.audioSpace.metadata.scheduled_start) : null,
           updated_at : json.data.audioSpace.metadata.updated_at ? new Date(json.data.audioSpace.metadata.updated_at) : null,
+          is_recording : json.data.audioSpace.metadata.is_space_available_for_replay,
         };
         return json;
       }).catch(error => {
@@ -799,7 +847,7 @@ javascript:(function(){
       this.twid = Twitter.getToken("twid");
       this.mainurl = Twitter.getScriptURL("/main");
       this.vendorurl = Twitter.getScriptURL("vendor");
-      if (this.mainiurl === "" || this.vendorurl === "") {
+      if (this.mainurl === "" || this.vendorurl === "") {
         this.oldstyle = true;
         this.mainurl = Twitter.getScriptURL("/init\.ja");
         this.vendorurl = Twitter.getScriptURL("/init\.ja");
