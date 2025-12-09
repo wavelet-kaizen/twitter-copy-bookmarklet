@@ -254,20 +254,80 @@ export class TweetParser {
    */
   static parseAudioSpace(apiResponse: AudioSpaceApiResponse): AudioSpaceData {
     const space = apiResponse.data.audioSpace;
+    const metadata = space.metadata;
     const adminRecords = this.toRecordArray(space.participants?.admins);
     const speakerRecords = this.toRecordArray(space.participants?.speakers);
+    const isRecording = this.resolveRecordingFlag(metadata);
 
     return {
-      id: '', // IDは外部から設定される
-      title: space.metadata.title,
-      state: space.metadata.state as AudioSpaceData['state'],
-      startedAt: space.metadata.started_at ? new Date(space.metadata.started_at) : undefined,
-      scheduledStart: space.metadata.scheduled_start ? new Date(space.metadata.scheduled_start) : undefined,
-      updatedAt: space.metadata.updated_at ? new Date(space.metadata.updated_at) : undefined,
-      isRecording: space.metadata.is_space_available_for_replay,
+      id: metadata.rest_id || '',
+      title: metadata.title,
+      state: this.normalizeAudioSpaceState(metadata.state),
+      startedAt: this.parseAudioSpaceTimestamp(metadata.started_at),
+      scheduledStart: this.parseAudioSpaceTimestamp(metadata.scheduled_start),
+      updatedAt: this.parseAudioSpaceTimestamp(metadata.updated_at),
+      isRecording,
       admins: this.mapParticipants(adminRecords),
       speakers: this.mapParticipants(speakerRecords),
     };
+  }
+
+  private static parseAudioSpaceTimestamp(value?: string | number | null): Date | undefined {
+    if (value === undefined || value === null) {
+      return undefined;
+    }
+
+    if (typeof value === 'number') {
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return undefined;
+      }
+      const numericValue = Number(trimmed);
+      if (!Number.isNaN(numericValue)) {
+        const numericDate = new Date(numericValue);
+        if (!Number.isNaN(numericDate.getTime())) {
+          return numericDate;
+        }
+      }
+
+      const parsed = new Date(trimmed);
+      return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+    }
+
+    return undefined;
+  }
+
+  private static normalizeAudioSpaceState(state: unknown): AudioSpaceData['state'] {
+    if (state === 'Ended' || state === 'TimedOut' || state === 'Running' || state === 'NotStarted') {
+      return state;
+    }
+    return 'NotStarted';
+  }
+
+  private static hasReplayStarted(value?: string | number | null): boolean {
+    if (value === undefined || value === null) {
+      return false;
+    }
+
+    const numeric = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(numeric) && numeric > 0;
+  }
+
+  private static resolveRecordingFlag(metadata: AudioSpaceApiResponse['data']['audioSpace']['metadata']): boolean | undefined {
+    if (typeof metadata.is_space_available_for_replay === 'boolean') {
+      return metadata.is_space_available_for_replay;
+    }
+
+    if (this.hasReplayStarted(metadata.replay_start_time)) {
+      return true;
+    }
+
+    return undefined;
   }
 
   private static createTweetEntryFromResult(
@@ -576,7 +636,7 @@ export class TweetParser {
       return { 
         id: idValue.string_value,
         state: 'NotStarted',
-        isRecording: false,
+        isRecording: undefined,
         admins: [],
         speakers: []
       };
@@ -585,7 +645,7 @@ export class TweetParser {
     return { 
       id: '',
       state: 'NotStarted',
-      isRecording: false,
+      isRecording: undefined,
       admins: [],
       speakers: []
     };

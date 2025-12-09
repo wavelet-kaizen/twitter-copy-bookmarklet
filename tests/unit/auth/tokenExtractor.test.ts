@@ -1,23 +1,22 @@
-import { TokenExtractor } from '../../../src/auth/tokenExtractor';
+import { TokenExtractor } from '@/auth/tokenExtractor';
 
 describe('TokenExtractor', () => {
   beforeEach(() => {
-    // documentのモックをリセット
     Object.defineProperty(document, 'cookie', {
       value: 'ct0=test-csrf; gt=test-guest; twid=test-twitter-id',
       writable: true,
     });
 
-    // script要素のモック
     const mockScript = document.createElement('script');
     mockScript.src = 'https://twitter.com/main.abc123.js';
     document.head.appendChild(mockScript);
+
+    delete (window as any).webpackChunk_twitter_responsive_web;
   });
 
   afterEach(() => {
     document.head.innerHTML = '';
-    // webpackモックをクリア
-    delete (global as any).window.webpackChunk_twitter_responsive_web;
+    delete (window as any).webpackChunk_twitter_responsive_web;
   });
 
   describe('extractTokensFromCookies', () => {
@@ -45,8 +44,7 @@ describe('TokenExtractor', () => {
 
   describe('extractBearerToken', () => {
     it('webpackモジュールからBearerトークンを抽出する', () => {
-      // より詳細なモック設定
-      (global as any).window.webpackChunk_twitter_responsive_web = [
+      (window as any).webpackChunk_twitter_responsive_web = [
         [
           ['main.abc123'],
           {
@@ -63,8 +61,7 @@ describe('TokenExtractor', () => {
     });
 
     it('Bearerトークンが見つからない場合は空文字を返す', () => {
-      // webpackモックを完全に別の内容に置き換え
-      (global as any).window.webpackChunk_twitter_responsive_web = [
+      (window as any).webpackChunk_twitter_responsive_web = [
         [
           ['other.module'],
           {
@@ -132,8 +129,7 @@ describe('TokenExtractor', () => {
 
   describe('extractEmojiRegexp', () => {
     it('絵文字の正規表現を抽出する', () => {
-      // webpackモジュールにvendorパターンを追加
-      (global as any).window.webpackChunk_twitter_responsive_web = [
+      (window as any).webpackChunk_twitter_responsive_web = [
         [
           ['vendor.def456'],
           {
@@ -148,6 +144,36 @@ describe('TokenExtractor', () => {
 
       expect(regexp).toBeInstanceOf(RegExp);
       expect(regexp.global).toBe(true);
+    });
+  });
+
+  describe('extractAudioSpaceQueryId', () => {
+    beforeEach(() => {
+      (window as any).webpackChunk_twitter_responsive_web = [];
+    });
+
+    it('modules.audio チャンクから queryId を取得する', () => {
+      const queryId = 'rC2zlE1t7SHbVG8obPZliQ';
+      (window as any).webpackChunk_twitter_responsive_web.push([
+        ['modules.audio.something'],
+        {
+          abc123: `some code queryId:"${queryId}",operationName:"AudioSpaceById";`
+        }
+      ]);
+
+      expect(TokenExtractor.extractAudioSpaceQueryId()).toBe(queryId);
+    });
+
+    it('modules.audio が無い場合でも AudioSpaceById を含むチャンクから取得する', () => {
+      const queryId = 'fallbackAudioSpaceId';
+      (window as any).webpackChunk_twitter_responsive_web.push([
+        ['vendors~timeline~init'],
+        {
+          def456: `some code queryId:"${queryId}",operationName:"AudioSpaceById"`
+        }
+      ]);
+
+      expect(TokenExtractor.extractAudioSpaceQueryId()).toBe(queryId);
     });
   });
 });

@@ -329,6 +329,86 @@ describe('TweetParser', () => {
       expect(result.admins[0]?.twitterScreenName).toBe('spacehost');
       expect(result.speakers).toHaveLength(1);
     });
+
+    it('ミリ秒タイムスタンプとrest_idを解釈する', () => {
+      const numericTimestampResponse: AudioSpaceApiResponse = {
+        data: {
+          audioSpace: {
+            metadata: {
+              rest_id: '1YqGolggnabJv',
+              title: 'のんるるオフコラボスペース #のんるる',
+              state: 'Running',
+              started_at: 1765206434163,
+              scheduled_start: 1765206000000,
+              updated_at: 1765207006094,
+              replay_start_time: 0,
+              is_space_available_for_replay: true
+            },
+            participants: {
+              admins: [],
+              speakers: []
+            }
+          }
+        }
+      };
+
+      const result = TweetParser.parseAudioSpace(numericTimestampResponse);
+
+      expect(result.id).toBe('1YqGolggnabJv');
+      expect(result.startedAt?.getTime()).toBe(1765206434163);
+      expect(result.scheduledStart?.getTime()).toBe(1765206000000);
+      expect(result.updatedAt?.getTime()).toBe(1765207006094);
+      expect(result.isRecording).toBe(true);
+      expect(result.state).toBe('Running');
+    });
+
+    it('replay_start_timeのみが設定されている場合でも録画中と判定する', () => {
+      const response: AudioSpaceApiResponse = {
+        data: {
+          audioSpace: {
+            metadata: {
+              rest_id: '1YqGolggnabJv',
+              title: '録画中スペース',
+              state: 'Running',
+              started_at: '2025-12-08T23:40:00Z',
+              replay_start_time: 1700000000000
+            },
+            participants: {
+              admins: [],
+              speakers: [],
+            },
+          }
+        }
+      };
+
+      const result = TweetParser.parseAudioSpace(response);
+
+      expect(result.isRecording).toBe(true);
+    });
+
+    it('録画可否が不明な場合はisRecordingをundefinedにする', () => {
+      const response: AudioSpaceApiResponse = {
+        data: {
+          audioSpace: {
+            metadata: {
+              rest_id: '1YqGolggnabJv',
+              title: 'スペース録画未定',
+              state: 'Running',
+              started_at: '2025-12-08T23:40:00Z',
+            },
+            participants: {
+              admins: [],
+              speakers: [],
+            },
+          }
+        }
+      };
+
+      const result = TweetParser.parseAudioSpace(response);
+
+      expect(result.isRecording).toBeUndefined();
+      expect(result.title).toBe('スペース録画未定');
+    });
   });
 
   describe('URL parameter handling', () => {

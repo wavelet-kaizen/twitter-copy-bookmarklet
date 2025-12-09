@@ -288,17 +288,26 @@ export class TwitterCopyBookmarklet {
       }
     }
 
-    tags.push(space.isRecording ? '録画あり' : '録画なし');
-
-    const lines: string[] = [];
-    let header = tags.map(tag => `[${tag}]`).join('');
-
-    if (space.title) {
-      const processedTitle = this.textProcessor.processText(space.title);
-      header += ` ${processedTitle}`;
+    if (space.isRecording === true) {
+      tags.push('録画あり');
+    } else if (space.isRecording === false) {
+      tags.push('録画なし');
     }
 
-    lines.push(header);
+    const lines: string[] = [];
+    const headerParts: string[] = [];
+    if (tags.length > 0) {
+      headerParts.push(tags.map(tag => `[${tag}]`).join(''));
+    }
+    if (space.title) {
+      const processedTitle = this.textProcessor.processText(space.title);
+      headerParts.push(processedTitle);
+    }
+
+    const header = headerParts.join(' ').trim();
+    if (header) {
+      lines.push(header);
+    }
 
     const admins = (space.admins ?? []).map((admin: SpaceParticipant) => {
       const processedName = this.textProcessor.processText(admin.displayName);
@@ -320,6 +329,10 @@ export class TwitterCopyBookmarklet {
 
     if (space.id) {
       lines.push(`https://x.com/i/spaces/${space.id}`);
+    }
+
+    if (lines.length === 0) {
+      return '';
     }
 
     return `${lines.join('\n')}\n`;

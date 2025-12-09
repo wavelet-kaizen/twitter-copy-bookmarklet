@@ -55,7 +55,7 @@ export interface AudioSpaceData {
   startedAt?: Date;
   scheduledStart?: Date;
   updatedAt?: Date;
-  isRecording: boolean;
+  isRecording?: boolean;
   admins: SpaceParticipant[];
   speakers: SpaceParticipant[];
 }
@@ -105,16 +105,18 @@ export interface AudioSpaceApiResponse {
   data: {
     audioSpace: {
       metadata: {
+        rest_id?: string;
         title?: string;
         state: string;
-        started_at?: string;
-        scheduled_start?: string;
-        updated_at?: string;
-        is_space_available_for_replay: boolean;
+        started_at?: string | number | null;
+        scheduled_start?: string | number | null;
+        updated_at?: string | number | null;
+        replay_start_time?: string | number | null;
+        is_space_available_for_replay?: boolean;
       };
-      participants: {
-        admins: Array<Record<string, unknown>>;
-        speakers: Array<Record<string, unknown>>;
+      participants?: {
+        admins?: Array<Record<string, unknown>>;
+        speakers?: Array<Record<string, unknown>>;
       };
     };
   };

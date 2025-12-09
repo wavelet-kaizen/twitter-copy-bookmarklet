@@ -109,4 +109,18 @@ describe('TwitterCopyBookmarklet formatAudioSpace', () => {
 
     expect(formatted).toContain('&lt;Twitter Space&gt;\n\n一段落目');
   });
+
+  it('取得失敗などで録画情報が不明な場合は録画タグを表示しない', () => {
+    const bookmarklet = createBookmarklet() as any;
+
+    const result = bookmarklet.formatAudioSpace({
+      id: '1unknownSpace',
+      state: 'Running',
+      admins: [],
+      speakers: [],
+    } as any);
+
+    expect(result).toBe('https://x.com/i/spaces/1unknownSpace\n');
+    expect(result).not.toContain('録画');
+  });
 });

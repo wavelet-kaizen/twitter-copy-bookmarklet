@@ -134,10 +134,41 @@ export class TokenExtractor {
    * AudioSpace用のQueryIdを抽出
    */
   static extractAudioSpaceQueryId(): string {
-    return this.getModuleParameter(
+    const direct = this.getModuleParameter(
       'modules.audio',
       /AudioSpaceById/,
       /queryId:"([^"]+)"/
     );
+    if (direct) {
+      return direct;
+    }
+
+    try {
+      const rawChunks = window.webpackChunk_twitter_responsive_web as unknown[] | undefined;
+      for (const chunk of rawChunks ?? []) {
+        if (!Array.isArray(chunk) || chunk.length < 2) {
+          continue;
+        }
+        const moduleMap = chunk[1];
+        if (typeof moduleMap !== 'object' || moduleMap === null) {
+          continue;
+        }
+
+        for (const exportValue of Object.values(moduleMap)) {
+          const content = String(exportValue ?? '');
+          if (!content.includes('AudioSpaceById')) {
+            continue;
+          }
+          const matched = content.match(/queryId:"([^"]+)"/);
+          if (matched?.[1]) {
+            return matched[1];
+          }
+        }
+      }
+    } catch (error) {
+      console.error('AudioSpace queryId extraction failed:', error);
+    }
+
+    return '';
   }
 }
