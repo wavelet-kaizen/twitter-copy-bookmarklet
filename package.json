@@ -1,6 +1,6 @@
 {
   "name": "twitter-copy-bookmarklet-ts",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "description": "X(旧Twitter)コピペツール",
   "type": "module",
   "main": "dist/main.js",

@@ -28,10 +28,10 @@ describe('Twitter Copy Bookmarklet Integration', () => {
     // webpackモックを設定（Bearerトークン用）
     (global as any).window.webpackChunk_twitter_responsive_web = [
       [
-        ['main.abc123'],
+        [40179],
         {
-          'module-with-bearer': {
-            toString: () => 'const token = "Bearer AAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDD"; export default token;'
+          '73008': {
+            toString: () => 'const token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xn5"; export default token;'
           }
         }
       ]

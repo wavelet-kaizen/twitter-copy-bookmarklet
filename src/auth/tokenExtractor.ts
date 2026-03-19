@@ -1,7 +1,8 @@
 import { TwitterTokens } from '../types';
 
 type WebpackModuleMap = Record<string, unknown>;
-type WebpackChunkEntry = [string[], WebpackModuleMap];
+type WebpackChunkId = string | number;
+type WebpackChunkEntry = [WebpackChunkId[], WebpackModuleMap];
 
 declare global {
   interface Window {
@@ -33,7 +34,7 @@ export class TokenExtractor {
   static extractBearerToken(): string {
     try {
       return this.getModuleParameter(
-        'main',
+        undefined,
         'Bearer A',
         /[" ](Bearer AAAAAA[^"]+)"/
       );
@@ -87,25 +88,12 @@ export class TokenExtractor {
   }
 
   private static getModuleParameter(
-    moduleName: string,
+    moduleName: string | undefined,
     key: string | RegExp,
     parameter: RegExp
   ): string {
     try {
-      const rawChunks = window.webpackChunk_twitter_responsive_web as unknown[] | undefined;
-      const candidateModules: WebpackChunkEntry[] = (rawChunks ?? []).filter((chunk): chunk is WebpackChunkEntry => {
-        if (!Array.isArray(chunk) || chunk.length < 2) {
-          return false;
-        }
-
-        const [rawIds, moduleMap] = chunk as [unknown, unknown];
-        if (!Array.isArray(rawIds) || typeof moduleMap !== 'object' || moduleMap === null) {
-          return false;
-        }
-
-        const moduleIds = rawIds.filter((id): id is string => typeof id === 'string');
-        return moduleIds.some(id => id.startsWith(moduleName));
-      });
+      const candidateModules = this.getCandidateModules(moduleName);
 
       for (const [, moduleMap] of candidateModules) {
         const entries = Object.entries(moduleMap);
@@ -128,6 +116,28 @@ export class TokenExtractor {
       console.error('Module parameter extraction failed:', error);
       return '';
     }
+  }
+
+  private static getCandidateModules(moduleName?: string): WebpackChunkEntry[] {
+    const rawChunks = window.webpackChunk_twitter_responsive_web as unknown[] | undefined;
+
+    return (rawChunks ?? []).filter((chunk): chunk is WebpackChunkEntry => {
+      if (!Array.isArray(chunk) || chunk.length < 2) {
+        return false;
+      }
+
+      const [rawIds, moduleMap] = chunk as [unknown, unknown];
+      if (!Array.isArray(rawIds) || typeof moduleMap !== 'object' || moduleMap === null) {
+        return false;
+      }
+
+      if (!moduleName) {
+        return true;
+      }
+
+      const moduleIds = rawIds.filter((id): id is string => typeof id === 'string');
+      return moduleIds.some(id => id.startsWith(moduleName));
+    });
   }
 
   /**

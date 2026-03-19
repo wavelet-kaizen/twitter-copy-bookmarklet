@@ -46,7 +46,7 @@ describe('TokenExtractor', () => {
     it('webpackモジュールからBearerトークンを抽出する', () => {
       (window as any).webpackChunk_twitter_responsive_web = [
         [
-          ['main.abc123'],
+          [40179],
           {
             'module-with-bearer': {
               toString: () => 'const token = "Bearer AAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDD"; export default token;'
@@ -58,6 +58,31 @@ describe('TokenExtractor', () => {
       const token = TokenExtractor.extractBearerToken();
 
       expect(token).toBe('Bearer AAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCDDDDDDDDDDDDDDDDDDD');
+    });
+
+    it('mainチャンク以外の数値IDチャンクからBearerトークンを抽出する', () => {
+      (window as any).webpackChunk_twitter_responsive_web = [
+        [
+          ['vendor.abc123'],
+          {
+            'vendor-module': {
+              toString: () => 'const nonToken = "not here";'
+            }
+          }
+        ],
+        [
+          [40179],
+          {
+            '73008': {
+              toString: () => 'const token = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xn5"; export default token;'
+            }
+          }
+        ]
+      ];
+
+      const token = TokenExtractor.extractBearerToken();
+
+      expect(token).toBe('Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xn5');
     });
 
     it('Bearerトークンが見つからない場合は空文字を返す', () => {
