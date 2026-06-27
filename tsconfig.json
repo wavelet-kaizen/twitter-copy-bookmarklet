@@ -1,8 +1,8 @@
-﻿{
+{
   "compilerOptions": {
     "target": "ES2018",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": ["ES2018", "DOM", "DOM.Iterable"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -23,9 +23,8 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -38,12 +37,5 @@
     "coverage",
     "**/*.test.ts",
     "**/*.spec.ts"
-  ],
-  "ts-node": {
-    "esm": true,
-    "compilerOptions": {
-      "module": "ESNext",
-      "moduleResolution": "node"
-    }
-  }
+  ]
 }

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
+import fs from 'fs';
+import path from 'path';
+import vm from 'vm';
+import { fileURLToPath } from 'url';
 
 function loadSource(filePath) {
   const fullPath = path.resolve(process.cwd(), filePath);
@@ -63,6 +64,8 @@ function main() {
   process.exit(failed ? 1 : 0);
 }
 
-if (require.main === module) {
+const currentFile = fileURLToPath(import.meta.url);
+
+if (process.argv[1] && path.resolve(process.argv[1]) === currentFile) {
   main();
 }

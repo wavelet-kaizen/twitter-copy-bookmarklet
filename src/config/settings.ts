@@ -1,18 +1,14 @@
 import { NGSettings } from '../types';
 
-type BookmarkletUserConfig = Partial<Pick<NGSettings, 'trimBlankLine' | 'removeEmoji'>> & {
+export type TwitterCopyUserConfig = Partial<Pick<NGSettings, 'trimBlankLine' | 'removeEmoji'>> & {
   avoidNgLevel?: 0 | 1 | 2 | 3;
 };
 
 declare global {
   interface Window {
-    TWITTER_COPY_USER_CONFIG?: BookmarkletUserConfig;
+    TWITTER_COPY_USER_CONFIG?: TwitterCopyUserConfig;
   }
 }
-
-const USER_CONFIG: BookmarkletUserConfig = typeof window !== 'undefined'
-  ? window.TWITTER_COPY_USER_CONFIG ?? {}
-  : {};
 
 const NG_LEVELS: Array<0 | 1 | 2 | 3> = [0, 1, 2, 3];
 
@@ -24,9 +20,9 @@ const resolveNgLevel = (level: unknown, fallback: 0 | 1 | 2 | 3): 0 | 1 | 2 | 3 
 };
 
 export const DEFAULT_SETTINGS: NGSettings = {
-  level: resolveNgLevel(USER_CONFIG.avoidNgLevel, 0),
-  removeEmoji: USER_CONFIG.removeEmoji ?? false,
-  trimBlankLine: USER_CONFIG.trimBlankLine ?? 128,
+  level: 0,
+  removeEmoji: false,
+  trimBlankLine: 128,
   ngUrls: [
     /(https?:\/\/note\.mu\/?[^\s]*)/g,
     /(https?:\/\/.*amazon\.co[^\s]*)/g,
@@ -264,8 +260,18 @@ export const EMOJI_REGEXP_SUB = /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}
 export const REMOVE_SURROGATE_CHARS = [65039, 8419];
 
 export function createSettings(avoidNgLevel: 0 | 1 | 2 | 3): NGSettings {
+  const userConfig = getUserConfig();
+
   return {
     ...DEFAULT_SETTINGS,
-    level: resolveNgLevel(USER_CONFIG.avoidNgLevel, avoidNgLevel),
+    level: resolveNgLevel(userConfig.avoidNgLevel, avoidNgLevel),
+    removeEmoji: userConfig.removeEmoji ?? DEFAULT_SETTINGS.removeEmoji,
+    trimBlankLine: userConfig.trimBlankLine ?? DEFAULT_SETTINGS.trimBlankLine,
   };
+}
+
+function getUserConfig(): TwitterCopyUserConfig {
+  return typeof window !== 'undefined'
+    ? window.TWITTER_COPY_USER_CONFIG ?? {}
+    : {};
 }

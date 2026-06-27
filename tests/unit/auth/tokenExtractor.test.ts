@@ -101,6 +101,25 @@ describe('TokenExtractor', () => {
 
       expect(token).toBe('');
     });
+
+    it('指定されたwindowからBearerトークンを抽出する', () => {
+      const pageWindow = {
+        webpackChunk_twitter_responsive_web: [
+          [
+            [40179],
+            {
+              'module-with-bearer': {
+                toString: () => 'const token = "Bearer AAAAAAAAAAAAAAAAAAAAAPAGEWINDOWTOKEN";'
+              }
+            }
+          ]
+        ],
+      } as unknown as Window;
+
+      const token = TokenExtractor.extractBearerToken(pageWindow);
+
+      expect(token).toBe('Bearer AAAAAAAAAAAAAAAAAAAAAPAGEWINDOWTOKEN');
+    });
   });
 
   describe('extractTweetId', () => {

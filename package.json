@@ -1,11 +1,11 @@
 {
   "name": "twitter-copy-bookmarklet-ts",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "description": "X(旧Twitter)コピペツール",
   "type": "module",
   "main": "dist/main.js",
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack --mode production --env target=all",
     "build:dev": "webpack --mode development",
     "dev": "webpack --mode development --watch",
     "test": "jest",
@@ -16,14 +16,18 @@
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist coverage",
     "build:all-levels": "npm run build:level0 && npm run build:level1 && npm run build:level2 && npm run build:level3",
-    "build:level0": "cross-env NG_LEVEL=0 webpack --mode production --env ngLevel=0 && node scripts/inject-user-config.cjs min/twitter_copy.0.min.js",
-    "build:level1": "cross-env NG_LEVEL=1 webpack --mode production --env ngLevel=1 && node scripts/inject-user-config.cjs min/twitter_copy.1.min.js",
-    "build:level2": "cross-env NG_LEVEL=2 webpack --mode production --env ngLevel=2 && node scripts/inject-user-config.cjs min/twitter_copy.2.min.js",
-    "build:level3": "cross-env NG_LEVEL=3 webpack --mode production --env ngLevel=3 && node scripts/inject-user-config.cjs min/twitter_copy.3.min.js"
+    "build:bookmarklet": "webpack --mode production --env target=bookmarklet",
+    "build:userscript": "webpack --mode production --env target=userscript",
+    "build:level0": "cross-env NG_LEVEL=0 webpack --mode production --env ngLevel=0 --env target=all && node scripts/inject-user-config.cjs min/twitter_copy.0.min.js",
+    "build:level1": "cross-env NG_LEVEL=1 webpack --mode production --env ngLevel=1 --env target=all && node scripts/inject-user-config.cjs min/twitter_copy.1.min.js",
+    "build:level2": "cross-env NG_LEVEL=2 webpack --mode production --env ngLevel=2 --env target=all && node scripts/inject-user-config.cjs min/twitter_copy.2.min.js",
+    "build:level3": "cross-env NG_LEVEL=3 webpack --mode production --env ngLevel=3 --env target=all && node scripts/inject-user-config.cjs min/twitter_copy.3.min.js"
   },
   "keywords": [
     "twitter",
     "bookmarklet",
+    "tampermonkey",
+    "userscript",
     "typescript",
     "social-media"
   ],
@@ -59,6 +63,7 @@
   "files": [
     "dist/**/*",
     "min/**/*",
+    "userscripts/**/*",
     "README.md",
     "CLAUDE.md"
   ]

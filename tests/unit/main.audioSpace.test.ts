@@ -14,6 +14,10 @@ const createBookmarklet = () => {
     createTweetUrl: (screenName: string, tweetId: string) => `https://x.com/${screenName}/status/${tweetId}`,
   };
 
+  instance.runtime = {
+    pageWindow: window,
+  };
+
   instance.formatTime = (date: Date) => {
     const pad = (value: number) => value.toString().padStart(2, '0');
     return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
