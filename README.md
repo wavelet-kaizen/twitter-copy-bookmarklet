@@ -42,17 +42,29 @@
 
 ### TamperMonkeyの場合
 
-1. **ユーザースクリプトのコードをコピー**  
-   `userscripts/` にある0～3の `.user.js` ファイルのうち、お好みのNG回避レベルのファイルを使います。
+1. **TamperMonkeyを有効化**  
+   ブラウザにTamperMonkeyをインストールし、有効にします。
 
-2. **TamperMonkeyに登録**  
-   TamperMonkeyの新規スクリプト画面に `.user.js` の内容を貼り付けて保存します。
+2. **ユーザースクリプトを開く**  
+   GitHubリポジトリで、`userscripts/` にある0～3の `.user.js` ファイルのうち、お好みのNG回避レベルのファイルを開きます。
 
-3. **X/Twitterのポストを表示**  
+3. **Rawからインストール**  
+   ファイル右上の「Raw」をクリックします。スマホの場合は「...」ボタンから「Raw file content」の「View」を押します。GitHubのRawボタンは、装飾なしのファイル本体を表示する機能です。[Tampermonkey公式FAQ](https://www.tampermonkey.net/faq.php?q=Q102)でも、GitHubのユーザースクリプトは「view raw」リンクからインストールする方法が案内されています。
+
+4. **TamperMonkeyに登録**  
+   TamperMonkeyのインストール確認画面が開いたら、内容と権限を確認して「インストール」を選択します。
+
+5. **X/Twitterのポストを表示**  
    コピーしたいポストのページを開きます。
 
-4. **メニューから実行**  
+6. **メニューから実行**  
    TamperMonkeyのメニューから「このポストをコピー」を選択します。ポストの情報がクリップボードにコピーされます。
+
+#### Rawを押してもコードが表示されるだけの場合
+
+Chrome/Edgeでは、TamperMonkeyアイコンを右クリックして「拡張機能を管理」から「ユーザースクリプトを許可（Allow User Scripts）」をオンにします。項目がない環境では、拡張機能管理画面の「デベロッパーモード」をオンにします。TamperMonkey 5.3以降のChromium系ブラウザでは、どちらかが必要です。
+
+それでも反応しない場合は、TamperMonkeyのダッシュボードから「新規スクリプトを追加」を開き、GitHubのコード全体を貼り付けて保存します。
 
 ### Androidの場合
 
